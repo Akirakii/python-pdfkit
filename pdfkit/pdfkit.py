@@ -31,14 +31,24 @@ class PDFKit(object):
         def __str__(self):
             return self.msg
 
-    def __init__(self, url_or_file, type_, options=None, toc=None, cover=None,
-                 css=None, configuration=None, cover_first=False, verbose=False, raise_on_error=True):
+    def __init__(
+        self,
+        url_or_file,
+        type_,
+        options=None,
+        toc=None,
+        cover=None,
+        css=None,
+        configuration=None,
+        cover_first=False,
+        verbose=False,
+        raise_on_error=True,
+    ):
 
         self.source = Source(url_or_file, type_)
-        self.configuration = (Configuration() if configuration is None
-                              else configuration)
+        self.configuration = Configuration() if configuration is None else configuration
         try:
-            self.wkhtmltopdf = self.configuration.wkhtmltopdf.decode('utf-8')
+            self.wkhtmltopdf = self.configuration.wkhtmltopdf.decode("utf-8")
         except AttributeError:
             self.wkhtmltopdf = self.configuration.wkhtmltopdf
 
@@ -69,7 +79,9 @@ class PDFKit(object):
             yield optkey
 
             if isinstance(optval, (list, tuple)):
-                assert len(optval) == 2 and optval[0] and optval[1], 'Option value can only be either a string or a (tuple, list) of 2 items'
+                assert (
+                    len(optval) == 2 and optval[0] and optval[1]
+                ), "Option value can only be either a string or a (tuple, list) of 2 items"
                 yield optval[0]
                 yield optval[1]
             else:
@@ -85,30 +97,30 @@ class PDFKit(object):
         yield self.wkhtmltopdf
 
         if not self.verbose:
-            self.options.update({'--quiet': ''})
+            self.options.update({"--quiet": ""})
 
         for argpart in self._genargs(self.options):
             if argpart:
                 yield argpart
 
         if self.cover and self.cover_first:
-            yield 'cover'
+            yield "cover"
             yield self.cover
 
         if self.toc:
-            yield 'toc'
+            yield "toc"
             for argpart in self._genargs(self.toc):
                 if argpart:
                     yield argpart
 
         if self.cover and not self.cover_first:
-            yield 'cover'
+            yield "cover"
             yield self.cover
 
         # If the source is a string then we will pipe it into wkhtmltopdf
         # If the source is file-like then we will read from it and pipe it in
         if self.source.isString() or self.source.isFileObj():
-            yield '-'
+            yield "-"
         else:
             if isinstance(self.source.source, str):
                 yield self.source.to_s()
@@ -121,7 +133,7 @@ class PDFKit(object):
         if path:
             yield path
         else:
-            yield '-'
+            yield "-"
 
     def command(self, path=None):
         return list(self._command(path))
@@ -133,31 +145,38 @@ class PDFKit(object):
 
         stderr_lines = stderr.splitlines()
 
-        if not raise_on_error and 'Done' in stderr:
+        if not raise_on_error and "Done" in stderr:
             return
 
         # Sometimes wkhtmltopdf will exit with non-zero
         # even if it finishes generation.
         # If will display 'Done' in the second last line
-        if len(stderr_lines) > 1 and stderr.splitlines()[-2].strip() == 'Done':
+        if len(stderr_lines) > 1 and stderr.splitlines()[-2].strip() == "Done":
             return
 
-        if 'cannot connect to X server' in stderr:
-            raise IOError('%s\n'
-                          'You will need to run wkhtmltopdf within a "virtual" X server.\n'
-                          'Go to the link below for more information\n'
-                          'https://github.com/JazzCore/python-pdfkit/wiki/Using-wkhtmltopdf-without-X-server' % stderr)
+        if "cannot connect to X server" in stderr:
+            raise IOError(
+                "%s\n"
+                'You will need to run wkhtmltopdf within a "virtual" X server.\n'
+                "Go to the link below for more information\n"
+                "https://github.com/JazzCore/python-pdfkit/wiki/Using-wkhtmltopdf-without-X-server"
+                % stderr
+            )
 
-        if 'Error' in stderr:
-            raise IOError('wkhtmltopdf reported an error:\n' + stderr)
+        if "Error" in stderr:
+            raise IOError("wkhtmltopdf reported an error:\n" + stderr)
 
-        error_msg = stderr or 'Unknown Error'
-        raise IOError("wkhtmltopdf exited with non-zero code {0}. error:\n{1}".format(exit_code, error_msg))
+        error_msg = stderr or "Unknown Error"
+        raise IOError(
+            "wkhtmltopdf exited with non-zero code {0}. error:\n{1}".format(
+                exit_code, error_msg
+            )
+        )
 
     def to_pdf(self, path=None):
         args = self.command(path)
 
-        if sys.platform == 'win32':
+        if sys.platform == "win32":
             # hide cmd window
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -169,7 +188,7 @@ class PDFKit(object):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=self.environ,
-                startupinfo=startupinfo
+                startupinfo=startupinfo,
             )
         else:
             result = subprocess.Popen(
@@ -177,7 +196,7 @@ class PDFKit(object):
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                env=self.environ
+                env=self.environ,
             )
 
         # If the source is a string then we will pipe it into wkhtmltopdf.
@@ -185,42 +204,46 @@ class PDFKit(object):
         # string and prepend css to it and then pass it to stdin.
         # This is a workaround for a bug in wkhtmltopdf (look closely in README)
         if self.source.isString() or (self.source.isFile() and self.css):
-            input = self.source.to_s().encode('utf-8')
+            input = self.source.to_s().encode("utf-8")
         elif self.source.isFileObj():
-            input = self.source.source.read().encode('utf-8')
+            input = self.source.source.read().encode("utf-8")
         else:
             input = None
 
         stdout, stderr = result.communicate(input=input)
         stderr = stderr or stdout or b""
-        stderr = stderr.decode('utf-8', errors='replace')
+        stderr = stderr.decode("utf-8", errors="replace")
         exit_code = result.returncode
         self.handle_error(exit_code, stderr, self.raise_on_error)
 
         # Since wkhtmltopdf sends its output to stderr we will capture it
         # and properly send to stdout
-        if '--quiet' not in args:
+        if "--quiet" not in args:
             sys.stdout.write(stderr)
 
         if not path:
             return stdout
 
         try:
-            with codecs.open(path, encoding='utf-8') as f:
+            with codecs.open(path, encoding="utf-8") as f:
                 # read 4 bytes to get PDF signature '%PDF'
                 text = f.read(4)
-                if text == '':
-                    raise IOError('Command failed: %s\n'
-                                  'Check whhtmltopdf output without \'quiet\' '
-                                  'option' % ' '.join(args))
+                if text == "":
+                    raise IOError(
+                        "Command failed: %s\n"
+                        "Check whhtmltopdf output without 'quiet' "
+                        "option" % " ".join(args)
+                    )
                 return True
         except (IOError, OSError) as e:
-            raise IOError('Command failed: %s\n'
-                          'Check whhtmltopdf output without \'quiet\' option\n'
-                          '%s ' % (' '.join(args), e))
+            raise IOError(
+                "Command failed: %s\n"
+                "Check whhtmltopdf output without 'quiet' option\n"
+                "%s " % (" ".join(args), e)
+            )
 
     def _normalize_options(self, options):
-        """ Generator of 2-tuples (option-key, option-value).
+        """Generator of 2-tuples (option-key, option-value).
         When options spec is a list, generate a 2-tuples per list item.
 
         :param options: dict {option name: value}
@@ -232,8 +255,8 @@ class PDFKit(object):
         """
 
         for key, value in list(options.items()):
-            if '--' not in key:
-                normalized_key = '--%s' % self._normalize_arg(key)
+            if "--" not in key:
+                normalized_key = "--%s" % self._normalize_arg(key)
             else:
                 normalized_key = self._normalize_arg(key)
 
@@ -241,7 +264,7 @@ class PDFKit(object):
                 for optval in value:
                     yield (normalized_key, optval)
             else:
-                normalized_value = '' if isinstance(value, bool) else value
+                normalized_value = "" if isinstance(value, bool) else value
                 yield (normalized_key, str(normalized_value) if value else value)
 
     def _normalize_arg(self, arg):
@@ -252,8 +275,9 @@ class PDFKit(object):
 
     def _prepend_css(self, path):
         if self.source.isUrl() or isinstance(self.source.source, list):
-            raise self.ImproperSourceError('CSS files can be added only to a single '
-                                           'file or string')
+            raise self.ImproperSourceError(
+                "CSS files can be added only to a single " "file or string"
+            )
 
         if not isinstance(path, list):
             path = [path]
@@ -268,13 +292,15 @@ class PDFKit(object):
             with codecs.open(self.source.to_s(), encoding="UTF-8") as f:
                 inp = f.read()
             self.source = Source(
-                inp.replace('</head>', self._style_tag_for(css_data) + '</head>'),
-                'string')
+                inp.replace("</head>", self._style_tag_for(css_data) + "</head>"),
+                "string",
+            )
 
         elif self.source.isString():
-            if '</head>' in self.source.to_s():
+            if "</head>" in self.source.to_s():
                 self.source.source = self.source.to_s().replace(
-                    '</head>', self._style_tag_for(css_data) + '</head>')
+                    "</head>", self._style_tag_for(css_data) + "</head>"
+                )
             else:
                 self.source.source = self._style_tag_for(css_data) + self.source.to_s()
 
@@ -286,16 +312,19 @@ class PDFKit(object):
         returns:
           dict: {config option: value}
         """
-        if (isinstance(content, io.IOBase)
-                or content.__class__.__name__ == 'StreamReaderWriter'):
+        if (
+            isinstance(content, io.IOBase)
+            or content.__class__.__name__ == "StreamReaderWriter"
+        ):
             content = content.read()
 
         found = {}
 
-        for x in re.findall('<meta [^>]*>', content):
-            if re.search('name=["\']%s' % self.configuration.meta_tag_prefix, x):
-                name = re.findall('name=["\']%s([^"\']*)' %
-                                  self.configuration.meta_tag_prefix, x)[0]
-                found[name] = re.findall('content=["\']([^"\']*)', x)[0]
+        for x in re.findall("<meta [^>]*>", content):
+            if re.search("name=[\"']%s" % self.configuration.meta_tag_prefix, x):
+                name = re.findall(
+                    "name=[\"']%s([^\"']*)" % self.configuration.meta_tag_prefix, x
+                )[0]
+                found[name] = re.findall("content=[\"']([^\"']*)", x)[0]
 
         return found
