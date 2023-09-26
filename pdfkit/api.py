@@ -26,7 +26,7 @@ def from_url(
     :param configuration: (optional) instance of pdfkit.configuration.Configuration()
     :param cover_first: (optional) if True, cover always precedes TOC
     :param verbose: (optional) By default '--quiet' is passed to all calls, set this to False to get wkhtmltopdf output to stdout.
-    :param raise_on_error: (optional) if False, will ignore wkhtmltopdf errors if pdf gets generated.
+    :param raise_on_error: (optional) if False, will ignore wkhtmltopdf errors.
 
     Returns: True on success
     """
@@ -70,7 +70,7 @@ def from_file(
     :param configuration: (optional) instance of pdfkit.configuration.Configuration()
     :param cover_first: (optional) if True, cover always precedes TOC
     :param verbose: (optional) By default '--quiet' is passed to all calls, set this to False to get wkhtmltopdf output to stdout.
-    :param raise_on_error: (optional) if False, will ignore wkhtmltopdf errors if pdf gets generated.
+    :param raise_on_error: (optional) if False, will ignore wkhtmltopdf errors.
 
     Returns: True on success
     """
@@ -115,7 +115,7 @@ def from_string(
     :param configuration: (optional) instance of pdfkit.configuration.Configuration()
     :param cover_first: (optional) if True, cover always precedes TOC
     :param verbose: (optional) By default '--quiet' is passed to all calls, set this to False to get wkhtmltopdf output to stdout.
-    :param raise_on_error: (optional) if False, will ignore wkhtmltopdf errors if pdf gets generated.
+    :param raise_on_error: (optional) if False, will ignore wkhtmltopdf errors.
 
     Returns: True on success
     """

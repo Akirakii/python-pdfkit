@@ -139,14 +139,11 @@ class PDFKit(object):
         return list(self._command(path))
 
     @staticmethod
-    def handle_error(exit_code, stderr, raise_on_error=True):
+    def handle_error(exit_code, stderr):
         if exit_code == 0:
             return
 
         stderr_lines = stderr.splitlines()
-
-        if not raise_on_error and "Done" in stderr:
-            return
 
         # Sometimes wkhtmltopdf will exit with non-zero
         # even if it finishes generation.
@@ -214,7 +211,9 @@ class PDFKit(object):
         stderr = stderr or stdout or b""
         stderr = stderr.decode("utf-8", errors="replace")
         exit_code = result.returncode
-        self.handle_error(exit_code, stderr, self.raise_on_error)
+
+        if self.raise_on_error:
+            self.handle_error(exit_code, stderr)
 
         # Since wkhtmltopdf sends its output to stderr we will capture it
         # and properly send to stdout
